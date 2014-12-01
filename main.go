@@ -14,6 +14,7 @@ import (
 
 var keepAtLeast int
 var keepYoungerThanDays int
+var dryRun bool
 
 type LocalImage struct {
 	ID        string
@@ -44,6 +45,7 @@ func (im ByAge) Less(i, j int) bool { return im[i].CreatedAt.After(im[j].Created
 func main() {
 	flag.IntVar(&keepAtLeast, "k", 5, "Number of image-versions to keep")
 	flag.IntVar(&keepYoungerThanDays, "a", 14, "Minimum age (in days) an image must be before deletion")
+	flag.BoolVar(&dryRun, "n", false, "Dry-run, will only list images to delete, without performing actual deletion")
 	flag.Parse()
 	endpoint := "unix:///var/run/docker.sock" // localhost for now
 	client, _ := docker.NewClient(endpoint)
@@ -65,7 +67,7 @@ func main() {
 	now := time.Now()
 	for name, imArr := range LocalImages {
 		if len(imArr) <= keepAtLeast {
-			fmt.Println("Ignoring images frpm", name, "which has less than the minimum", keepAtLeast, "image versions.")
+			fmt.Println("Ignoring images from", name, "which has less than the minimum", keepAtLeast, "image versions.")
 			continue
 		}
 		sort.Sort(ByAge(imArr))
@@ -79,12 +81,15 @@ func main() {
 				fmt.Println("Avoiding deletion of too recent image", val)
 				continue
 			}
-			fmt.Println("Deleting", val)
-			err = client.RemoveImage(val.ID)
-			if err != nil {
-				fmt.Println("Got err from RemoveImage", err)
+			if dryRun == false {
+				fmt.Println("Deleting", val)
+				err = client.RemoveImage(val.ID)
+				if err != nil {
+					fmt.Println("Got err from RemoveImage", err)
+				}
+			} else {
+				fmt.Println("Would delete", val)
 			}
 		}
 	}
-
 }
