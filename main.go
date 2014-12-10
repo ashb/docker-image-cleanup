@@ -3,7 +3,8 @@ package main
 import (
 	"bytes"
 	"flag"
-	"fmt"
+	"io"
+	"log"
 	"os"
 	"sort"
 	"strings"
@@ -15,6 +16,9 @@ import (
 var keepAtLeast int
 var keepYoungerThanDays int
 var dryRun bool
+var logPath string
+var logFile *os.File
+var logger *log.Logger
 
 type LocalImage struct {
 	ID        string
@@ -46,16 +50,20 @@ func main() {
 	flag.IntVar(&keepAtLeast, "k", 5, "Number of image-versions to keep")
 	flag.IntVar(&keepYoungerThanDays, "a", 14, "Minimum age (in days) an image must be before deletion")
 	flag.BoolVar(&dryRun, "n", false, "Dry-run, will only list images to delete, without performing actual deletion")
+	flag.StringVar(&logPath, "l", "/var/log/docker-image-cleanup.log", "Path to log file")
 	flag.Parse()
 	endpoint := "unix:///var/run/docker.sock" // localhost for now
 	client, _ := docker.NewClient(endpoint)
+
+	// Setup logger
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	logger = log.New(io.MultiWriter(logFile, os.Stdout), "docker-image-cleanup - ", log.Flags())
 
 	// Pull image info
 	LocalImages := make(map[string][]LocalImage)
 	images, err := client.ListImages(false)
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		logger.Fatal(err)
 	}
 	for _, img := range images {
 		nameParts := strings.Split(img.RepoTags[0], ":")
@@ -67,28 +75,28 @@ func main() {
 	now := time.Now()
 	for name, imArr := range LocalImages {
 		if len(imArr) <= keepAtLeast {
-			fmt.Println("Ignoring images from", name, "which has less than the minimum", keepAtLeast, "image versions.")
+			logger.Println("Ignoring images from", name, "which has less than the minimum", keepAtLeast, "image versions.")
 			continue
 		}
 		sort.Sort(ByAge(imArr))
 		saveImages := imArr[0:keepAtLeast]
 		delImages := imArr[keepAtLeast:]
 		for _, val := range saveImages {
-			fmt.Println("Keeping ", val)
+			logger.Println("Keeping ", val)
 		}
 		for _, val := range delImages {
 			if now.Add(time.Duration(-keepYoungerThanDays*24) * time.Hour).Before(val.CreatedAt) {
-				fmt.Println("Avoiding deletion of too recent image", val)
+				logger.Println("Avoiding deletion of too recent image", val)
 				continue
 			}
 			if dryRun == false {
-				fmt.Println("Deleting", val)
+				logger.Println("Deleting", val)
 				err = client.RemoveImage(val.ID)
 				if err != nil {
-					fmt.Println("Got err from RemoveImage", err)
+					logger.Println("Got err from RemoveImage", err)
 				}
 			} else {
-				fmt.Println("Would delete", val)
+				logger.Println("Would delete", val)
 			}
 		}
 	}
