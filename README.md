@@ -6,13 +6,13 @@ Removes old and extraneous images from localhost
 
 ## Install
 
-go get github.com/lever/docker-image-cleanup
-go install github.com/lever/docker-image-cleanup
+    go get github.com/lever/docker-image-cleanup
+    go install github.com/lever/docker-image-cleanup
 
 ## Usage
 
-docker-image-cleanup -h # Show help
-docker-image-cleanup -a 30 -k 10 # Delete images over 30 days old, keep at least 10 per image name
+    docker-image-cleanup -h # Show help
+    docker-image-cleanup -a 30 -k 10 # Delete images over 30 days old, keep at least 10 per image name
 
 ## Config
 
