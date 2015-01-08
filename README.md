@@ -6,6 +6,7 @@ Removes old and extraneous images from localhost
 
 ## Install
 
+go get github.com/lever/docker-image-cleanup
 go install github.com/lever/docker-image-cleanup
 
 ## Usage
