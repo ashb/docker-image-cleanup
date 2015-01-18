@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -57,6 +58,10 @@ func main() {
 
 	// Setup logger
 	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	if err != nil {
+		fmt.Println("Unable to open logfile: ", logPath, " Got err ", err)
+		os.Exit(1)
+	}
 	logger = log.New(io.MultiWriter(logFile, os.Stdout), "docker-image-cleanup - ", log.Flags())
 
 	// Pull image info
