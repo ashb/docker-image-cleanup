@@ -66,7 +66,7 @@ func main() {
 
 	// Pull image info
 	LocalImages := make(map[string][]LocalImage)
-	images, err := client.ListImages(false)
+	images, err := client.ListImages(docker.ListImagesOptions{All: false})
 	if err != nil {
 		logger.Fatal(err)
 	}
