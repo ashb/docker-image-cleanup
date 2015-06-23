@@ -50,7 +50,7 @@ func (im ByAge) Less(i, j int) bool { return im[i].CreatedAt.After(im[j].Created
 func main() {
 	flag.IntVar(&keepAtLeast, "k", 5, "Number of image-versions to keep")
 	flag.IntVar(&keepYoungerThanDays, "a", 14, "Minimum age (in days) an image must be before deletion")
-	flag.BoolVar(&dryRun, "n", false, "Dry-run, will only list images to delete, without performing actual deletion")
+	flag.BoolVar(&dryRun, "n", false, "Dry-run, lists images to be deleted")
 	flag.StringVar(&logPath, "l", "/var/log/docker-image-cleanup.log", "Path to log file")
 	flag.Parse()
 	endpoint := "unix:///var/run/docker.sock" // localhost for now
