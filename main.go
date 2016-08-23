@@ -53,8 +53,11 @@ func main() {
 	flag.BoolVar(&dryRun, "n", false, "Dry-run, lists images to be deleted")
 	flag.StringVar(&logPath, "l", "/var/log/docker-image-cleanup.log", "Path to log file")
 	flag.Parse()
-	endpoint := "unix:///var/run/docker.sock" // localhost for now
-	client, _ := docker.NewClient(endpoint)
+	client, err := docker.NewClientFromEnv()
+	if err != nil {
+		fmt.Println("Unable to create docker client: ", err)
+		os.Exit(1)
+	}
 
 	// Setup logger
 	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
