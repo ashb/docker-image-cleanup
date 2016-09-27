@@ -71,7 +71,16 @@ func main() {
 		logger.Fatal(err)
 	}
 	for _, img := range images {
-		nameParts := strings.Split(img.RepoTags[0], ":")
+		var nameParts []string
+		// If you pull an image via digest (`docker pull ubuntu@sha256:$FULL_SHA`)
+		// we might not have a tag, just a digest.
+		if len(img.RepoTags) > 0 {
+			nameParts = strings.Split(img.RepoTags[0], ":")
+		} else if len(img.RepoDigests) > 0 {
+			nameParts = strings.Split(img.RepoDigests[0], "@")
+		} else {
+			continue
+		}
 		ii := LocalImage{ID: img.ID, Name: nameParts[0], Tag: nameParts[1], CreatedAt: time.Unix(img.Created, 0)}
 		LocalImages[nameParts[0]] = append(LocalImages[nameParts[0]], ii)
 	}
